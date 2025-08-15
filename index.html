@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KARMA — Fair Mint on Monad Testnet</title>
+  <meta name="description" content="Mint 1,000,000 KARMA per tx on Monad Testnet. Max supply 72B, 5B to Treasury for DEX liquidity, 67B public mint. Price 0.1 MON." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#060915;
+      --card:#0f142a;
+      --card2:#0b1021;
+      --text:#e6ecff;
+      --muted:#9aa6d1;
+      --accent:#7aa2ff;
+      --success:#39e29d;
+      --danger:#ff6584;
+      --warning:#ffd166;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;background:radial-gradient(1500px 800px at 80% 20%, #142048 0%, #0b1021 35%, var(--bg) 100%);
+      color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+      overflow-x:hidden;
+    }
+    .stars{position:fixed;inset:0;pointer-events:none;background:transparent;}
+    .stars::before,.stars::after{
+      content:"";position:absolute;inset:-50%;pointer-events:none;opacity:.5;
+      background:radial-gradient(2px 2px at 20% 30%, #fff 50%, transparent 51%),
+                 radial-gradient(1.5px 1.5px at 80% 60%, #fff 50%, transparent 51%),
+                 radial-gradient(1.2px 1.2px at 60% 20%, #fff 50%, transparent 51%),
+                 radial-gradient(1.8px 1.8px at 40% 80%, #fff 50%, transparent 51%),
+                 radial-gradient(1.1px 1.1px at 10% 70%, #fff 50%, transparent 51%);
+      animation: drift 60s linear infinite;
+    }
+    .stars::after{animation-duration: 90s;opacity:.35}
+    @keyframes drift{to{transform:translate3d(-10%, -10%, 0)}}
+
+    .container{max-width:1100px;margin:0 auto;padding:24px}
+    header{display:flex;gap:16px;align-items:center;justify-content:space-between}
+    .brand{display:flex;gap:14px;align-items:center}
+    .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#7aa2ff 0%,#39e29d 100%);display:grid;place-items:center;box-shadow:0 10px 30px rgba(58,117,255,.35)}
+    .logo span{font-family:Orbitron,Inter; font-weight:700; font-size:18px;color:#0b1021}
+    .brand h1{font-family:Orbitron,Inter;letter-spacing:.6px;margin:0;font-size:20px}
+    .net-pill{background:rgba(122,162,255,.15);border:1px solid rgba(122,162,255,.4);padding:6px 10px;border-radius:999px;font-size:12px;color:#cfe0ff}
+
+    .hero{display:grid;grid-template-columns: 1.2fr .8fr;gap:28px;margin-top:24px}
+    @media(max-width:900px){.hero{grid-template-columns:1fr}}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);padding:22px;border-radius:20px}
+    .rocket{min-height:380px;background:
+      url('https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=1470&auto=format&fit=crop') center/cover no-repeat;
+      border-radius:22px;position:relative;overflow:hidden
+    }
+    .rocket::after{content:"TO THE MOON";position:absolute;bottom:14px;right:16px;font-family:Orbitron;letter-spacing:2px;font-size:12px;background:rgba(0,0,0,.35);padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.25)}
+
+    .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0 6px}
+    .stat{background:var(--card2);border:1px solid rgba(255,255,255,.07);padding:14px;border-radius:14px}
+    .stat .label{font-size:12px;color:var(--muted)}
+    .stat .val{font-size:18px;font-weight:800;margin-top:6px; font-family:Orbitron}
+
+    .btn{appearance:none;border:none;border-radius:14px;padding:14px 18px;font-weight:700;cursor:pointer;transition:transform .05s ease,box-shadow .2s ease}
+    .btn:active{transform:translateY(1px)}
+    .btn-primary{background:linear-gradient(135deg,#7aa2ff 0%,#39e29d 100%);color:#0b1021;box-shadow:0 10px 24px rgba(67,132,255,.35)}
+    .btn-outline{background:transparent;color:#cfe0ff;border:1px solid rgba(255,255,255,.18)}
+
+    .footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:18px;font-size:13px;color:var(--muted)}
+    a{color:#cfe0ff}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    .toast{position:fixed;top:16px;right:16px;background:#111826;border:1px solid rgba(255,255,255,.15);padding:12px 14px;border-radius:12px;display:none}
+    .toast.show{display:block}
+  </style>
+  <!-- Ethers v6 (CDN) -->
+  <script src="https://unpkg.com/ethers@6.13.2/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="logo"><span>Κ</span></div>
+        <div>
+          <h1>KARMA</h1>
+          <div class="net-pill">Monad Testnet • Chain ID 10143</div>
+        </div>
+      </div>
+      <div>
+        <button id="connectBtn" class="btn btn-outline">Connect Wallet</button>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="card rocket"></div>
+      <div class="card">
+        <h2 style="margin:0 0 10px">Fair Meme Mint</h2>
+        <p style="margin:0 0 12px;color:var(--muted)">Max supply <b>72,000,000,000 KARMA</b> • <b>5B</b> to Treasury for DEX liquidity • <b>67B</b> public mint. Each mint gives <b>1,000,000 KARMA</b> for <b>0.1 MON</b>.</p>
+
+        <div class="stat-grid">
+          <div class="stat"><div class="label">Mint price</div><div id="mintPrice" class="val">0.1 MON</div></div>
+          <div class="stat"><div class="label">Minted (public)</div><div id="minted" class="val">-</div></div>
+          <div class="stat"><div class="label">Remaining (to 67B)</div><div id="remaining" class="val">-</div></div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button id="mintBtn" class="btn btn-primary" disabled>Mint 1,000,000 KARMA</button>
+          <button id="addNetBtn" class="btn btn-outline">Add Monad Testnet</button>
+        </div>
+
+        <div style="margin-top:14px;font-size:13px;color:var(--muted)">
+          0.1 MON covers mint fee; proceeds auto-forwarded to Treasury <span class="mono">0x6c2AA81b02a940c04A570aFFe7a413ca54C625cf</span>.
+        </div>
+
+        <div class="footer">
+          <div>Creator credit: <a href="https://x.com/ega_2ez4crypto" target="_blank" rel="noreferrer">@ega_2ez4crypto</a></div>
+          <div>Contract: <a id="caLink" target="_blank" rel="noreferrer" class="mono"></a></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // ====== CONFIG ======
+    const MONAD_TESTNET = {
+      chainId: 0x279f, // 10143
+      chainIdHex: '0x279f',
+      chainName: 'Monad Testnet',
+      rpcUrls: ['https://testnet-rpc.monad.xyz'],
+      nativeCurrency: { name: 'Monad', symbol: 'MON', decimals: 18 },
+      blockExplorerUrls: ['https://testnet.monadexplorer.com']
+    };
+
+    const CONTRACT_ADDRESS = '0x19e68d5691d4f136d552c03e9990016ff6498092';
+
+    // Minimal ABI for our KARMA contract (ethers v6 format)
+    const ABI = [
+      // Read
+      'function name() view returns (string)',
+      'function symbol() view returns (string)',
+      'function mintPrice() view returns (uint256)',
+      'function totalPublicMinted() view returns (uint256)',
+      'function PUBLIC_MINT_CAP() view returns (uint256)',
+      'function MINT_AMOUNT() view returns (uint256)',
+      // Write
+      'function mint() payable'
+    ];
+
+    let provider, signer, contract;
+
+    const $ = (id)=>document.getElementById(id);
+    const toast=(msg,isErr=false)=>{const t=$('toast');t.textContent=msg;t.style.borderColor=isErr?'#ff658480':'#39e29d80';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500)}
+
+    function getInjectedProvider(){
+      const eth = window.ethereum;
+      if(!eth) return null;
+      // Handle multiple injected providers (MetaMask, Rabby, Backpack EVM)
+      if(eth.providers && eth.providers.length){
+        // Prefer a Rabby/MetaMask/Backpack order if present
+        const pick = eth.providers.find(p=>p.isRabby) || eth.providers.find(p=>p.isMetaMask) || eth.providers[0];
+        return pick;
+      }
+      return eth;
+    }
+
+    async function ensureNetwork(eth){
+      try{
+        const chainId = await eth.request({ method: 'eth_chainId' });
+        if(chainId !== MONAD_TESTNET.chainIdHex){
+          await eth.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: MONAD_TESTNET.chainIdHex }]
+          });
+        }
+      }catch(switchErr){
+        // Not added? Add it.
+        if(switchErr.code === 4902 || (switchErr.data && switchErr.data.originalError && switchErr.data.originalError.code===4902)){
+          await eth.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: MONAD_TESTNET.chainIdHex,
+              chainName: MONAD_TESTNET.chainName,
+              rpcUrls: MONAD_TESTNET.rpcUrls,
+              nativeCurrency: MONAD_TESTNET.nativeCurrency,
+              blockExplorerUrls: MONAD_TESTNET.blockExplorerUrls,
+            }]
+          });
+        } else {
+          throw switchErr;
+        }
+      }
+    }
+
+    async function connect(){
+      try{
+        const eth = getInjectedProvider();
+        if(!eth){ toast('No EVM wallet found. Install MetaMask/Rabby/Backpack.', true); return; }
+        await ensureNetwork(eth);
+        const accounts = await eth.request({ method: 'eth_requestAccounts' });
+        provider = new ethers.BrowserProvider(eth);
+        signer = await provider.getSigner();
+        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+        $('connectBtn').textContent = accounts[0].slice(0,6)+"…"+accounts[0].slice(-4);
+        $('mintBtn').disabled = false;
+        loadStats();
+        toast('Wallet connected');
+      }catch(err){ console.error(err); toast(err.message || 'Failed to connect', true); }
+    }
+
+    async function addNetwork(){
+      const eth = getInjectedProvider();
+      if(!eth){ toast('No EVM wallet found', true); return; }
+      try{
+        await eth.request({
+          method:'wallet_addEthereumChain',
+          params:[{
+            chainId: MONAD_TESTNET.chainIdHex,
+            chainName: MONAD_TESTNET.chainName,
+            rpcUrls: MONAD_TESTNET.rpcUrls,
+            nativeCurrency: MONAD_TESTNET.nativeCurrency,
+            blockExplorerUrls: MONAD_TESTNET.blockExplorerUrls,
+          }]
+        });
+        toast('Monad Testnet added');
+      }catch(e){ toast(e.message||'Failed to add network', true); }
+    }
+
+    async function loadStats(){
+      try{
+        if(!provider){
+          // read-only provider for public stats
+          provider = new ethers.JsonRpcProvider(MONAD_TESTNET.rpcUrls[0]);
+        }
+        const read = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+        const [price, minted, cap] = await Promise.all([
+          read.mintPrice(),
+          read.totalPublicMinted(),
+          read.PUBLIC_MINT_CAP(),
+        ]);
+        const fmt = (v)=>{
+          const x = Number(ethers.formatUnits(v, 18));
+          if(x >= 1_000_000_000) return (x/1_000_000_000).toFixed(2)+'B';
+          if(x >= 1_000_000) return (x/1_000_000).toFixed(2)+'M';
+          if(x >= 1_000) return (x/1_000).toFixed(2)+'K';
+          return String(x);
+        }
+        $('mintPrice').textContent = Number(ethers.formatUnits(price,18)) + ' MON';
+        $('minted').textContent = fmt(minted);
+        $('remaining').textContent = fmt(cap - minted);
+      }catch(err){ console.error(err); }
+    }
+
+    async function doMint(){
+      try{
+        if(!contract){ await connect(); }
+        const price = await contract.mintPrice();
+        const tx = await contract.mint({ value: price });
+        toast('Mint submitted…');
+        await tx.wait();
+        toast('Mint success!');
+        loadStats();
+      }catch(err){ console.error(err); toast(err.shortMessage || err.message || 'Mint failed', true); }
+    }
+
+    // init
+    (function init(){
+      $('connectBtn').addEventListener('click', connect);
+      $('mintBtn').addEventListener('click', doMint);
+      $('addNetBtn').addEventListener('click', addNetwork);
+      const ca = CONTRACT_ADDRESS;
+      const link = `https://testnet.monadexplorer.com/address/${ca}`;
+      const caLink = $('caLink');
+      caLink.textContent = ca;
+      caLink.href = link;
+      loadStats();
+    })();
+  </script>
+</body>
+</html>
